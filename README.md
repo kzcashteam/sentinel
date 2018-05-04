@@ -29,7 +29,7 @@ Make sure the local UCOM daemon running is at least version 1.6 (10605)
 
 Clone the Sentinel repo and install Python dependencies.
 
-    $ git clone https://github.com/ucomteam/sentinel.git && cd sentinel
+    $ git clone https://github.com/unitedcryptocommunity/sentinel.git && cd sentinel
     $ virtualenv ./venv
     $ ./venv/bin/pip install -r requirements.txt
 

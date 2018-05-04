@@ -7,11 +7,11 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'lib'))
 from misc import printdbg
 
 
-class KZCashConfig():
+class UCOMConfig():
 
     @classmethod
     def slurp_config_file(self, filename):
-        # read kzcash.conf config but skip commented lines
+        # read ucom.conf config but skip commented lines
         f = io.open(filename)
         lines = []
         for line in f:
@@ -20,27 +20,27 @@ class KZCashConfig():
             lines.append(line)
         f.close()
 
-        # data is kzcash.conf without commented lines
+        # data is ucom.conf without commented lines
         data = ''.join(lines)
 
         return data
 
     @classmethod
     def get_rpc_creds(self, data, network='mainnet'):
-        # get rpc info from kzcash.conf
+        # get rpc info from ucom.conf
         match = re.findall(r'rpc(user|password|port)=(.*?)$', data, re.MULTILINE)
 
         # python >= 2.7
         creds = {key: value for (key, value) in match}
 
-        # standard KZCash defaults...
+        # standard UCOM defaults...
         default_port = 8276 if (network == 'mainnet') else 18276
 
-        # use default port for network if not specified in kzcash.conf
+        # use default port for network if not specified in ucom.conf
         if not ('port' in creds):
             creds[u'port'] = default_port
 
-        # convert to an int if taken from kzcash.conf
+        # convert to an int if taken from ucom.conf
         creds[u'port'] = int(creds[u'port'])
 
         # return a dictionary with RPC credential key, value pairs

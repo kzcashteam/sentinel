@@ -3,25 +3,25 @@
 """
 import sys
 import os
-from kzcash_config import KZCashConfig
+from ucom_config import UCOMConfig
 
 default_sentinel_config = os.path.normpath(
     os.path.join(os.path.dirname(__file__), '../sentinel.conf')
 )
 sentinel_config_file = os.environ.get('SENTINEL_CONFIG', default_sentinel_config)
-sentinel_cfg = KZCashConfig.tokenize(sentinel_config_file)
+sentinel_cfg = UCOMConfig.tokenize(sentinel_config_file)
 
 
-def get_kzcash_conf():
+def get_ucom_conf():
     home = os.environ.get('HOME')
 
-    kzcash_conf = os.path.join(home, ".kzcashcore/kzcash.conf")
+    ucom_conf = os.path.join(home, ".ucom/ucom.conf")
     if sys.platform == 'darwin':
-        kzcash_conf = os.path.join(home, "Library/Application Support/KZCashCore/kzcash.conf")
+        ucom_conf = os.path.join(home, "Library/Application Support/UCOM/ucom.conf")
 
-    kzcash_conf = sentinel_cfg.get('kzcash_conf', kzcash_conf)
+    ucom_conf = sentinel_cfg.get('ucom_conf', ucom_conf)
 
-    return kzcash_conf
+    return ucom_conf
 
 
 def get_network():
@@ -77,6 +77,6 @@ def get_db_conn():
     return db
 
 
-kzcash_conf = get_kzcash_conf()
+ucom_conf = get_ucom_conf()
 network = get_network()
 db = get_db_conn()

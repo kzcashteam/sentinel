@@ -6,12 +6,12 @@ sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '../../
 
 
 @pytest.fixture
-def valid_kzcash_address(network='mainnet'):
+def valid_ucom_address(network='mainnet'):
     return 'yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Ui' if (network == 'testnet') else 'KuKaonuAGhTTWFQEZB8QbWB7USaB27R6mn'
 
 
 @pytest.fixture
-def invalid_kzcash_address(network='mainnet'):
+def invalid_ucom_address(network='mainnet'):
     return 'yYe8KwyaUu5YswSYmB3q3ryx8XTUu9y7Uj' if (network == 'testnet') else 'KuKaonuAGhTTWFQEZB8QbWB7USaB27R6mN'
 
 
@@ -61,34 +61,34 @@ def mn_status_bad():
 # ========================================================================
 
 
-def test_valid_kzcash_address():
-    from kzcashlib import is_valid_kzcash_address
+def test_valid_ucom_address():
+    from ucomlib import is_valid_ucom_address
 
-    main = valid_kzcash_address()
-    test = valid_kzcash_address('testnet')
+    main = valid_ucom_address()
+    test = valid_ucom_address('testnet')
 
-    assert is_valid_kzcash_address(main) is True
-    assert is_valid_kzcash_address(main, 'mainnet') is True
-    assert is_valid_kzcash_address(main, 'testnet') is False
+    assert is_valid_ucom_address(main) is True
+    assert is_valid_ucom_address(main, 'mainnet') is True
+    assert is_valid_ucom_address(main, 'testnet') is False
 
-    assert is_valid_kzcash_address(test) is False
-    assert is_valid_kzcash_address(test, 'mainnet') is False
-    assert is_valid_kzcash_address(test, 'testnet') is True
+    assert is_valid_ucom_address(test) is False
+    assert is_valid_ucom_address(test, 'mainnet') is False
+    assert is_valid_ucom_address(test, 'testnet') is True
 
 
-def test_invalid_kzcash_address():
-    from kzcashlib import is_valid_kzcash_address
+def test_invalid_ucom_address():
+    from ucomlib import is_valid_ucom_address
 
-    main = invalid_kzcash_address()
-    test = invalid_kzcash_address('testnet')
+    main = invalid_ucom_address()
+    test = invalid_ucom_address('testnet')
 
-    assert is_valid_kzcash_address(main) is False
-    assert is_valid_kzcash_address(main, 'mainnet') is False
-    assert is_valid_kzcash_address(main, 'testnet') is False
+    assert is_valid_ucom_address(main) is False
+    assert is_valid_ucom_address(main, 'mainnet') is False
+    assert is_valid_ucom_address(main, 'testnet') is False
 
-    assert is_valid_kzcash_address(test) is False
-    assert is_valid_kzcash_address(test, 'mainnet') is False
-    assert is_valid_kzcash_address(test, 'testnet') is False
+    assert is_valid_ucom_address(test) is False
+    assert is_valid_ucom_address(test, 'mainnet') is False
+    assert is_valid_ucom_address(test, 'testnet') is False
 
 
 def test_deterministic_masternode_elections(current_block_hash, mn_list):
@@ -100,7 +100,7 @@ def test_deterministic_masternode_elections(current_block_hash, mn_list):
 
 
 def test_deterministic_masternode_elections(current_block_hash, mn_list):
-    from kzcashlib import elect_mn
+    from ucomlib import elect_mn
 
     winner = elect_mn(block_hash=current_block_hash, mnlist=mn_list)
     assert winner == 'f68a2e5d64f4a9be7ff8d0fbd9059dcd3ce98ad7a19a9260d1d6709127ffac56-1'
@@ -110,7 +110,7 @@ def test_deterministic_masternode_elections(current_block_hash, mn_list):
 
 
 def test_parse_masternode_status_vin():
-    from kzcashlib import parse_masternode_status_vin
+    from ucomlib import parse_masternode_status_vin
     status = mn_status_good()
     vin = parse_masternode_status_vin(status['vin'])
     assert vin == 'f68a2e5d64f4a9be7ff8d0fbd9059dcd3ce98ad7a19a9260d1d6709127ffac56-1'
@@ -121,9 +121,9 @@ def test_parse_masternode_status_vin():
 
 
 def test_hash_function():
-    import kzcashlib
+    import ucomlib
     sb_data_hex = '5b227375706572626c6f636b222c207b226576656e745f626c6f636b5f686569676874223a2037323639362c20227061796d656e745f616464726573736573223a2022795965384b77796155753559737753596d42337133727978385854557539793755697c795965384b77796155753559737753596d4233713372797838585455753979375569222c20227061796d656e745f616d6f756e7473223a202232352e37353030303030307c32352e3735303030303030227d5d'
     sb_hash = '5c7c28ddec8c1ad54b49f6f1e79369e7ccaf76f5ddc30e502569d674e458ccf3'
 
-    hex_hash = "%x" % kzcashlib.hashit(sb_data_hex)
+    hex_hash = "%x" % ucomlib.hashit(sb_data_hex)
     assert hex_hash == sb_hash

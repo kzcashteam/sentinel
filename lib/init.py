@@ -57,23 +57,23 @@ def is_database_correctly_configured():
     return configured
 
 
-def has_kzcash_conf():
+def has_ucom_conf():
     import config
     import io
 
-    valid_kzcash_conf = False
+    valid_ucom_conf = False
 
-    # ensure kzcash_conf exists & readable
+    # ensure ucom_conf exists & readable
     #
-    # if not, print a message stating that KZCash Core must be installed and
-    # configured, including JSONRPC access in kzcash.conf
+    # if not, print a message stating that UCOM Core must be installed and
+    # configured, including JSONRPC access in ucom.conf
     try:
-        f = io.open(config.kzcash_conf)
-        valid_kzcash_conf = True
+        f = io.open(config.ucom_conf)
+        valid_ucom_conf = True
     except IOError as e:
         print(e)
 
-    return valid_kzcash_conf
+    return valid_ucom_conf
 
 
 # === begin main
@@ -95,8 +95,8 @@ def main():
         print("Please ensure correct database configuration.")
         sys.exit(1)
 
-    if not has_kzcash_conf():
-        print("KZCashCore must be installed and configured, including JSONRPC access in kzcash.conf")
+    if not has_ucom_conf():
+        print("UCOM must be installed and configured, including JSONRPC access in ucom.conf")
         sys.exit(1)
 
 

@@ -6,13 +6,13 @@ os.environ['SENTINEL_CONFIG'] = os.path.normpath(os.path.join(os.path.dirname(__
 os.environ['SENTINEL_ENV'] = 'test'
 sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '../../lib')))
 import config
-from ucom_config import UCOMConfig
+from kzcash_config import KZCashConfig
 
 
 @pytest.fixture
-def ucom_conf(**kwargs):
+def kzcash_conf(**kwargs):
     defaults = {
-        'rpcuser': 'ucomrpc',
+        'rpcuser': 'kzcashrpc',
         'rpcpassword': 'EwJeV3fZTyTVozdECF627BkBMnNDwQaVLakG3A4wXYyk',
         'rpcport': 29241,
     }
@@ -34,35 +34,35 @@ rpcport={rpcport}
 
 
 def test_get_rpc_creds():
-    ucom_config = ucom_conf()
-    creds = UCOMConfig.get_rpc_creds(ucom_config, 'testnet')
+    kzcash_config = kzcash_conf()
+    creds = KZCashConfig.get_rpc_creds(kzcash_config, 'testnet')
 
     for key in ('user', 'password', 'port'):
         assert key in creds
-    assert creds.get('user') == 'ucomrpc'
+    assert creds.get('user') == 'kzcashrpc'
     assert creds.get('password') == 'EwJeV3fZTyTVozdECF627BkBMnNDwQaVLakG3A4wXYyk'
     assert creds.get('port') == 29241
 
-    ucom_config = ucom_conf(rpcpassword='s00pers33kr1t', rpcport=8000)
-    creds = UCOMConfig.get_rpc_creds(ucom_config, 'testnet')
+    kzcash_config = kzcash_conf(rpcpassword='s00pers33kr1t', rpcport=8000)
+    creds = KZCashConfig.get_rpc_creds(kzcash_config, 'testnet')
 
     for key in ('user', 'password', 'port'):
         assert key in creds
-    assert creds.get('user') == 'ucomrpc'
+    assert creds.get('user') == 'kzcashrpc'
     assert creds.get('password') == 's00pers33kr1t'
     assert creds.get('port') == 8000
 
-    no_port_specified = re.sub('\nrpcport=.*?\n', '\n', ucom_conf(), re.M)
-    creds = UCOMConfig.get_rpc_creds(no_port_specified, 'testnet')
+    no_port_specified = re.sub('\nrpcport=.*?\n', '\n', kzcash_conf(), re.M)
+    creds = KZCashConfig.get_rpc_creds(no_port_specified, 'testnet')
 
     for key in ('user', 'password', 'port'):
         assert key in creds
-    assert creds.get('user') == 'ucomrpc'
+    assert creds.get('user') == 'kzcashrpc'
     assert creds.get('password') == 'EwJeV3fZTyTVozdECF627BkBMnNDwQaVLakG3A4wXYyk'
     assert creds.get('port') == 18276
 
 
-# ensure ucom network (mainnet, testnet) matches that specified in config
-# requires running ucomd on whatever port specified...
+# ensure kzcash network (mainnet, testnet) matches that specified in config
+# requires running kzcashd on whatever port specified...
 #
-# This is more of a ucomd/jsonrpc test than a config test...
+# This is more of a kzcashd/jsonrpc test than a config test...

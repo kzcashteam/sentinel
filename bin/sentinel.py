@@ -5,7 +5,7 @@ sys.path.append(os.path.normpath(os.path.join(os.path.dirname(__file__), '../lib
 import init
 import config
 import misc
-from ucomd import UCOMDaemon
+from kzcashd import KZCashDaemon
 from models import Superblock, Proposal, GovernanceObject, Watchdog
 from models import VoteSignals, VoteOutcomes, Transient
 import socket
@@ -19,22 +19,22 @@ from scheduler import Scheduler
 import argparse
 
 
-# sync ucomd gobject list with our local relational DB backend
-def perform_ucomd_object_sync(ucomd):
-    GovernanceObject.sync(ucomd)
+# sync kzcashd gobject list with our local relational DB backend
+def perform_kzcashd_object_sync(kzcashd):
+    GovernanceObject.sync(kzcashd)
 
 
 # delete old watchdog objects, create new when necessary
-def watchdog_check(ucomd):
+def watchdog_check(kzcashd):
     printdbg("in watchdog_check")
 
     # delete expired watchdogs
-    for wd in Watchdog.expired(ucomd):
+    for wd in Watchdog.expired(kzcashd):
         printdbg("\tFound expired watchdog [%s], voting to delete" % wd.object_hash)
-        wd.vote(ucomd, VoteSignals.delete, VoteOutcomes.yes)
+        wd.vote(kzcashd, VoteSignals.delete, VoteOutcomes.yes)
 
     # now, get all the active ones...
-    active_wd = Watchdog.active(ucomd)
+    active_wd = Watchdog.active(kzcashd)
     active_count = active_wd.count()
 
     # none exist, submit a new one to the network
@@ -42,7 +42,7 @@ def watchdog_check(ucomd):
         # create/submit one
         printdbg("\tNo watchdogs exist... submitting new one.")
         wd = Watchdog(created_at=int(time.time()))
-        wd.submit(ucomd)
+        wd.submit(kzcashd)
 
     else:
         wd_list = sorted(active_wd, key=lambda wd: wd.object_hash)
@@ -50,20 +50,20 @@ def watchdog_check(ucomd):
         # highest hash wins
         winner = wd_list.pop()
         printdbg("\tFound winning watchdog [%s], voting VALID" % winner.object_hash)
-        winner.vote(ucomd, VoteSignals.valid, VoteOutcomes.yes)
+        winner.vote(kzcashd, VoteSignals.valid, VoteOutcomes.yes)
 
         # if remaining Watchdogs exist in the list, vote delete
         for wd in wd_list:
             printdbg("\tFound losing watchdog [%s], voting DELETE" % wd.object_hash)
-            wd.vote(ucomd, VoteSignals.delete, VoteOutcomes.yes)
+            wd.vote(kzcashd, VoteSignals.delete, VoteOutcomes.yes)
 
     printdbg("leaving watchdog_check")
 
 
-def attempt_superblock_creation(ucomd):
-    import ucomlib
+def attempt_superblock_creation(kzcashd):
+    import kzcashlib
 
-    if not ucomd.is_masternode():
+    if not kzcashd.is_masternode():
         print("We are not a Masternode... can't submit superblocks!")
         return
 
@@ -74,7 +74,7 @@ def attempt_superblock_creation(ucomd):
     # has this masternode voted on *any* superblocks at the given event_block_height?
     # have we voted FUNDING=YES for a superblock for this specific event_block_height?
 
-    event_block_height = ucomd.next_superblock_height()
+    event_block_height = kzcashd.next_superblock_height()
 
     if Superblock.is_voted_funding(event_block_height):
         # printdbg("ALREADY VOTED! 'til next time!")
@@ -82,20 +82,20 @@ def attempt_superblock_creation(ucomd):
         # vote down any new SBs because we've already chosen a winner
         for sb in Superblock.at_height(event_block_height):
             if not sb.voted_on(signal=VoteSignals.funding):
-                sb.vote(ucomd, VoteSignals.funding, VoteOutcomes.no)
+                sb.vote(kzcashd, VoteSignals.funding, VoteOutcomes.no)
 
         # now return, we're done
         return
 
-    if not ucomd.is_govobj_maturity_phase():
+    if not kzcashd.is_govobj_maturity_phase():
         printdbg("Not in maturity phase yet -- will not attempt Superblock")
         return
 
-    proposals = Proposal.approved_and_ranked(proposal_quorum=ucomd.governance_quorum(), next_superblock_max_budget=ucomd.next_superblock_max_budget())
-    budget_max = ucomd.get_superblock_budget_allocation(event_block_height)
-    sb_epoch_time = ucomd.block_height_to_epoch(event_block_height)
+    proposals = Proposal.approved_and_ranked(proposal_quorum=kzcashd.governance_quorum(), next_superblock_max_budget=kzcashd.next_superblock_max_budget())
+    budget_max = kzcashd.get_superblock_budget_allocation(event_block_height)
+    sb_epoch_time = kzcashd.block_height_to_epoch(event_block_height)
 
-    sb = ucomlib.create_superblock(proposals, event_block_height, budget_max, sb_epoch_time)
+    sb = kzcashlib.create_superblock(proposals, event_block_height, budget_max, sb_epoch_time)
     if not sb:
         printdbg("No superblock created, sorry. Returning.")
         return
@@ -103,12 +103,12 @@ def attempt_superblock_creation(ucomd):
     # find the deterministic SB w/highest object_hash in the DB
     dbrec = Superblock.find_highest_deterministic(sb.hex_hash())
     if dbrec:
-        dbrec.vote(ucomd, VoteSignals.funding, VoteOutcomes.yes)
+        dbrec.vote(kzcashd, VoteSignals.funding, VoteOutcomes.yes)
 
         # any other blocks which match the sb_hash are duplicates, delete them
         for sb in Superblock.select().where(Superblock.sb_hash == sb.hex_hash()):
             if not sb.voted_on(signal=VoteSignals.funding):
-                sb.vote(ucomd, VoteSignals.delete, VoteOutcomes.yes)
+                sb.vote(kzcashd, VoteSignals.delete, VoteOutcomes.yes)
 
         printdbg("VOTED FUNDING FOR SB! We're done here 'til next superblock cycle.")
         return
@@ -116,24 +116,24 @@ def attempt_superblock_creation(ucomd):
         printdbg("The correct superblock wasn't found on the network...")
 
     # if we are the elected masternode...
-    if (ucomd.we_are_the_winner()):
+    if (kzcashd.we_are_the_winner()):
         printdbg("we are the winner! Submit SB to network")
-        sb.submit(ucomd)
+        sb.submit(kzcashd)
 
 
-def check_object_validity(ucomd):
+def check_object_validity(kzcashd):
     # vote (in)valid objects
     for gov_class in [Proposal, Superblock]:
         for obj in gov_class.select():
-            obj.vote_validity(ucomd)
+            obj.vote_validity(kzcashd)
 
 
-def is_ucomd_port_open(ucomd):
+def is_kzcashd_port_open(kzcashd):
     # test socket open before beginning, display instructive message to MN
     # operators if it's not
     port_open = False
     try:
-        info = ucomd.rpc_command('getgovernanceinfo')
+        info = kzcashd.rpc_command('getgovernanceinfo')
         port_open = True
     except (socket.error, JSONRPCException) as e:
         print("%s" % e)
@@ -142,21 +142,21 @@ def is_ucomd_port_open(ucomd):
 
 
 def main():
-    ucomd = UCOMDaemon.from_ucom_conf(config.ucom_conf)
+    kzcashd = KZCashDaemon.from_kzcash_conf(config.kzcash_conf)
     options = process_args()
 
-    # check ucomd connectivity
-    if not is_ucomd_port_open(ucomd):
-        print("Cannot connect to ucomd. Please ensure ucomd is running and the JSONRPC port is open to Sentinel.")
+    # check kzcashd connectivity
+    if not is_kzcashd_port_open(kzcashd):
+        print("Cannot connect to kzcashd. Please ensure kzcashd is running and the JSONRPC port is open to Sentinel.")
         return
 
-    # check ucomd sync
-    if not ucomd.is_synced():
-        print("ucomd not synced with network! Awaiting full sync before running Sentinel.")
+    # check kzcashd sync
+    if not kzcashd.is_synced():
+        print("kzcashd not synced with network! Awaiting full sync before running Sentinel.")
         return
 
     # ensure valid masternode
-    if not ucomd.is_masternode():
+    if not kzcashd.is_masternode():
         print("Invalid Masternode Status, cannot continue.")
         return
 
@@ -188,16 +188,16 @@ def main():
     # ========================================================================
     #
     # load "gobject list" rpc command data, sync objects into internal database
-    perform_ucomd_object_sync(ucomd)
+    perform_kzcashd_object_sync(kzcashd)
 
     # delete old watchdog objects, create a new if necessary
-    watchdog_check(ucomd)
+    watchdog_check(kzcashd)
 
     # auto vote network objects as valid/invalid
-    # check_object_validity(ucomd)
+    # check_object_validity(kzcashd)
 
     # create a Superblock if necessary
-    attempt_superblock_creation(ucomd)
+    attempt_superblock_creation(kzcashd)
 
     # schedule the next run
     Scheduler.schedule_next_run()

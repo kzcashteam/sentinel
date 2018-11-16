@@ -1,9 +1,9 @@
 #!/bin/bash
 set -evx
 
-mkdir ~/.ucom
+mkdir ~/.kzcash
 
 # safety check
-if [ ! -f ~/.ucom/.ucom.conf ]; then
-  cp share/ucom.conf.example ~/.ucom/ucom.conf
+if [ ! -f ~/.kzcash/.kzcash.conf ]; then
+  cp share/kzcash.conf.example ~/.kzcash/kzcash.conf
 fi
